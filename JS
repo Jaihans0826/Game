@@ -1,0 +1,111 @@
+// Game variables
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const playerWidth = 50;
+const playerHeight = 50;
+let playerX = 50;
+let playerY = canvas.height - playerHeight - 10;
+let playerSpeed = 5;
+let score = 0;
+let gameOver = false;
+
+// Item variables
+const itemWidth = 30;
+const itemHeight = 30;
+let itemX = canvas.width - itemWidth - 10;
+let itemY = Math.random() * (canvas.height - itemHeight);
+let itemSpeed = 3;
+
+// Obstacle variables
+const obstacleWidth = 20;
+const obstacleHeight = 50;
+let obstacleX = canvas.width;
+let obstacleY = canvas.height - obstacleHeight - 10;
+let obstacleSpeed = 5;
+
+// Event listener for keyboard input
+document.addEventListener('keydown', movePlayer);
+
+// Function to handle player movement
+function movePlayer(event) {
+    if (event.key === 'ArrowUp' && playerY > 0) {
+        playerY -= playerSpeed;
+    } else if (event.key === 'ArrowDown' && playerY < canvas.height - playerHeight) {
+        playerY += playerSpeed;
+    }
+}
+
+// Function to draw player
+function drawPlayer() {
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(playerX, playerY, playerWidth, playerHeight);
+}
+
+// Function to draw item
+function drawItem() {
+    ctx.fillStyle = 'green';
+    ctx.fillRect(itemX, itemY, itemWidth, itemHeight);
+}
+
+// Function to draw obstacle
+function drawObstacle() {
+    ctx.fillStyle = 'red';
+    ctx.fillRect(obstacleX, obstacleY, obstacleWidth, obstacleHeight);
+}
+
+// Function to update game objects
+function update() {
+    if (!gameOver) {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw player, item, and obstacle
+        drawPlayer();
+        drawItem();
+        drawObstacle();
+        
+        // Update item position
+        itemX -= itemSpeed;
+        if (itemX + itemWidth < 0) {
+            itemX = canvas.width - itemWidth - 10;
+            itemY = Math.random() * (canvas.height - itemHeight);
+        }
+        
+        // Update obstacle position
+        obstacleX -= obstacleSpeed;
+        if (obstacleX + obstacleWidth < 0) {
+            obstacleX = canvas.width;
+        }
+        
+        // Collision detection with item
+        if (playerX < itemX + itemWidth &&
+            playerX + playerWidth > itemX &&
+            playerY < itemY + itemHeight &&
+            playerY + playerHeight > itemY) {
+            score++;
+            itemX = canvas.width - itemWidth - 10;
+            itemY = Math.random() * (canvas.height - itemHeight);
+        }
+        
+        // Collision detection with obstacle
+        if (playerX < obstacleX + obstacleWidth &&
+            playerX + playerWidth > obstacleX &&
+            playerY < obstacleY + obstacleHeight &&
+            playerY + playerHeight > obstacleY) {
+            gameOver = true;
+            alert('Game Over! Your score: ' + score);
+            window.location.reload(); // Reload the page to restart the game
+        }
+        
+        // Display score
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText('Score: ' + score, 10, 30);
+        
+        // Request animation frame
+        requestAnimationFrame(update);
+    }
+}
+
+// Start the game loop
+update();
