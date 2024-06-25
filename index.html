@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Dash-like Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #222;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 48px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div id="score">Score: 0</div>
+    <div id="gameOver">Game Over</div>
+    <script src="script.js"></script>
+</body>
+</html>
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Game constants
+const GRAVITY = 1.5;
+const JUMP_FORCE = -15;
+const PLAYER_WIDTH = 50;
+const PLAYER_HEIGHT = 50;
+const OBSTACLE_WIDTH = 50;
+const OBSTACLE_HEIGHT = 50;
+const OBSTACLE_GAP = 200;
+const OBSTACLE_SPEED = 5;
+const OBSTACLE_COLOR = '#f00';
+const BACKGROUND_COLOR = '#222';
+const SCORE_COLOR = '#fff';
+
+let player;
+let obstacles = [];
+let score = 0;
+let gameOver = false;
+
+// Player object
+class Player {
+    constructor(x, y, width, height, color) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.color = color;
+        this.velocityY = 0;
+        this.jumpForce = JUMP_FORCE;
+    }
+
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+
+    update() {
+        this.velocityY += GRAVITY;
+        this.y += this.velocityY;
+
+        if (this.y + this.height > canvas.height) {
+            this.y = canvas.height - this.height;
+            this.velocityY = 0;
+        }
+        if (this.y < 0) {
+            this.y = 0;
+            this.velocityY = 0;
+        }
+    }
+
+    jump() {
+        this.velocityY = this.jumpForce;
+    }
+
+    checkCollision(obstacle) {
+        if (this.x + this.width > obstacle.x &&
+            this.x < obstacle.x + OBSTACLE_WIDTH &&
+            this.y + this.height > obstacle.y &&
+            this.y < obstacle.y + OBSTACLE_HEIGHT) {
+                return true;
+            }
+        return false;
+    }
+}
+
+// Obstacle object
+class Obstacle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    draw() {
+        ctx.fillStyle = OBSTACLE_COLOR;
+        ctx.fillRect(this.x, this.y, OBSTACLE_WIDTH, OBSTACLE_HEIGHT);
+    }
+
+    update() {
+        this.x -= OBSTACLE_SPEED;
+    }
+}
+
+function drawScore() {
+    ctx.fillStyle = SCORE_COLOR;
+    ctx.font = '24px Arial';
+    ctx.fillText(`Score: ${score}`, 20, 40);
+}
+
+function drawGameOver() {
+    document.getElementById('gameOver').style.display = 'block';
+}
+
+function gameLoop() {
+    if (!gameOver) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        player.update();
+        player.draw();
+
+        if (frame % OBSTACLE_GAP === 0) {
+            let gapPosition = Math.floor(Math.random() * (canvas.height - OBSTACLE_HEIGHT));
+            obstacles.push(new Obstacle(canvas.width, gapPosition));
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            obstacles[i].update();
+            obstacles[i].draw();
+
+            if (player.checkCollision(obstacles[i])) {
+                gameOver = true;
+            }
+
+            if (obstacles[i].x + OBSTACLE_WIDTH < 0) {
+                obstacles.splice(i, 1);
+                score++;
+            }
+        }
+
+        drawScore();
+
+        if (gameOver) {
+            drawGameOver();
+            return;
+        }
+
+        frame++;
+        requestAnimationFrame(gameLoop);
+    }
+}
+
+let frame = 0;
+
+function startGame() {
+    player = new Player(100, canvas.height / 2, PLAYER_WIDTH, PLAYER_HEIGHT, '#00f');
+    obstacles = [];
+    score = 0;
+    gameOver = false;
+    document.getElementById('gameOver').style.display = 'none';
+    gameLoop();
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.code === 'Space') {
+        if (!gameOver) {
+            player.jump();
+        } else {
+            startGame();
+        }
+    }
+});
+
+startGame();
